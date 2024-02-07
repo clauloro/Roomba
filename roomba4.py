@@ -1,15 +1,11 @@
 import tkinter as tk
-import random
 
 class Room:
     def __init__(self):
         self.zones = {}
 
     def agregar_zona(self, nombre, largo, ancho):
-        self.zones[nombre] = {"largo": largo, "ancho": ancho, "obstaculos": []}
-
-    def agregar_obstaculo(self, zona, x, y):
-        self.zones[zona]["obstaculos"].append((x, y))
+        self.zones[nombre] = {"largo": largo, "ancho": ancho}
 
     def calcular_superficie_total(self):
         superficie_total = 0
@@ -56,21 +52,15 @@ class VacuumRobotGUI:
         self.lienzo = tk.Canvas(master, width=400, height=400)
         self.lienzo.grid(row=4, columnspan=2)
 
+        self.pos_x = 10
+        self.pos_y = 10
+
     def agregar_zona(self):
         nombre = self.entry_zona.get()
         largo = float(self.entry_largo.get().replace(",", "."))
         ancho = float(self.entry_ancho.get().replace(",", "."))
         self.room.agregar_zona(nombre, largo, ancho)
-        self.agregar_obstaculos_aleatorios(nombre)
         self.mostrar_zonas()
-
-    def agregar_obstaculos_aleatorios(self, zona):
-        largo = int(self.room.zones[zona]["largo"] * 20)
-        ancho = int(self.room.zones[zona]["ancho"] * 20)
-        for _ in range(random.randint(0, 5)):
-            x = random.randint(0, largo)
-            y = random.randint(0, ancho)
-            self.room.agregar_obstaculo(zona, x, y)
 
     def mostrar_zonas(self):
         self.lienzo.delete("all")
@@ -81,19 +71,17 @@ class VacuumRobotGUI:
         escala_ancho = 400 / max_ancho
 
         for nombre, dimensiones in self.room.zones.items():
-            x1 = 10
-            y1 = 10
-            x2 = 10 + dimensiones["largo"] * escala_largo
-            y2 = 10 + dimensiones["ancho"] * escala_ancho
+            x1 = self.pos_x
+            y1 = self.pos_y
+            x2 = self.pos_x + dimensiones["largo"] * escala_largo
+            y2 = self.pos_y + dimensiones["ancho"] * escala_ancho
             area = dimensiones["largo"] * dimensiones["ancho"]
             tiempo = VacuumRobot(self.room).estimar_tiempo_limpieza(1)  # Suponiendo velocidad de 1 m²/min
             self.lienzo.create_rectangle(x1, y1, x2, y2, fill="lightblue")
             self.lienzo.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=f"{nombre}\nÁrea: {area:.2f} m²\nTiempo: {tiempo:.2f} minutos", font=("Arial", 8, "bold"), justify="center")
+            self.pos_x += dimensiones["largo"] * escala_largo + 10
 
-            # Mostrar obstáculos
-            for obstaculo in dimensiones["obstaculos"]:
-                self.lienzo.create_rectangle(x1 + obstaculo[0] * escala_largo, y1 + obstaculo[1] * escala_ancho,
-                                             x1 + obstaculo[0] * escala_largo + 5, y1 + obstaculo[1] * escala_ancho + 5, fill="red")
+        self.pos_x = 10
 
 
 def main():
@@ -104,5 +92,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
 
 
