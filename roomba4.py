@@ -27,71 +27,193 @@ class VacuumRobot:
 class VacuumRobotGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Robot Aspirador")
+        master.title("ASPIRACION ROOMBA")  # Título de la ventana
 
         self.room = Room()
+        self.lienzo_frame = tk.Frame(master)
+        self.lienzo_frame.pack(expand=True, fill=tk.BOTH)
 
-        self.label_zona = tk.Label(master, text="Nombre de la zona:")
-        self.label_zona.grid(row=0, column=0)
-        self.entry_zona = tk.Entry(master)
-        self.entry_zona.grid(row=0, column=1)
+        self.label_title = tk.Label(self.lienzo_frame, text="ASPIRACION ROOMBA", font=("Arial", 20, "bold"))
+        self.label_title.pack()
 
-        self.label_largo = tk.Label(master, text="Largo (metros):")
-        self.label_largo.grid(row=1, column=0)
-        self.entry_largo = tk.Entry(master)
-        self.entry_largo.grid(row=1, column=1)
+        self.label_zona = tk.Label(self.lienzo_frame, text="Nombre de la zona:")
+        self.label_zona.pack()
+        self.entry_zona = tk.Entry(self.lienzo_frame)
+        self.entry_zona.pack()
 
-        self.label_ancho = tk.Label(master, text="Ancho (metros):")
-        self.label_ancho.grid(row=2, column=0)
-        self.entry_ancho = tk.Entry(master)
-        self.entry_ancho.grid(row=2, column=1)
+        self.label_largo = tk.Label(self.lienzo_frame, text="Largo (cm):")
+        self.label_largo.pack()
+        self.entry_largo = tk.Entry(self.lienzo_frame)
+        self.entry_largo.pack()
 
-        self.button_agregar = tk.Button(master, text="Agregar Zona", command=self.agregar_zona)
-        self.button_agregar.grid(row=3, columnspan=2)
+        self.label_ancho = tk.Label(self.lienzo_frame, text="Ancho (cm):")
+        self.label_ancho.pack()
+        self.entry_ancho = tk.Entry(self.lienzo_frame)
+        self.entry_ancho.pack()
 
-        self.lienzo = tk.Canvas(master, width=400, height=400)
-        self.lienzo.grid(row=4, columnspan=2)
+        self.button_agregar = tk.Button(self.lienzo_frame, text="Agregar Zona", command=self.agregar_zona)
+        self.button_agregar.pack()
 
-        self.pos_x = 10
-        self.pos_y = 10
+        self.lienzo = tk.Canvas(self.lienzo_frame, bg="white")
+        self.lienzo.pack(expand=True, fill=tk.BOTH)
+
+        self.factor_escala_inicial = 0.7  # Factor de escala inicial para la primera zona
+        self.escala = self.factor_escala_inicial
+        self.pos_x = 20  # Ajustamos la posición inicial x para que comience más cerca del borde
+        self.pos_y = 20  # Ajustamos la posición inicial y para que comience más cerca del borde
+
+        # Cargar la imagen de la Roomba
+        self.roomba_image = tk.PhotoImage(file="roomba.png")
+        self.lienzo.create_image(10, 10, anchor=tk.NW, image=self.roomba_image)  # Ajusta la posición según tu preferencia
 
     def agregar_zona(self):
         nombre = self.entry_zona.get()
-        largo = float(self.entry_largo.get().replace(",", "."))
-        ancho = float(self.entry_ancho.get().replace(",", "."))
+        largo = float(self.entry_largo.get().replace(",", ".")) / 100  # Convertir de cm a metros
+        ancho = float(self.entry_ancho.get().replace(",", ".")) / 100  # Convertir de cm a metros
         self.room.agregar_zona(nombre, largo, ancho)
         self.mostrar_zonas()
 
     def mostrar_zonas(self):
         self.lienzo.delete("all")
 
-        max_largo = max(self.room.zones.values(), key=lambda x: x["largo"])["largo"]
+        lienzo_width = self.lienzo.winfo_width()
+        lienzo_height = self.lienzo.winfo_height()
+
         max_ancho = max(self.room.zones.values(), key=lambda x: x["ancho"])["ancho"]
-        escala_largo = 400 / max_largo
-        escala_ancho = 400 / max_ancho
+        max_largo = max(self.room.zones.values(), key=lambda x: x["largo"])["largo"]
+
+        x_offset = 20
+        y_offset = 20
+        row_height = 0
 
         for nombre, dimensiones in self.room.zones.items():
-            x1 = self.pos_x
-            y1 = self.pos_y
-            x2 = self.pos_x + dimensiones["largo"] * escala_largo
-            y2 = self.pos_y + dimensiones["ancho"] * escala_ancho
+            factor_escala_x = lienzo_width / max_largo
+            factor_escala_y = lienzo_height / max_ancho
+            factor_escala = min(factor_escala_x, factor_escala_y) * self.escala
+
+            x1 = x_offset
+            y1 = y_offset
+            x2 = x1 + dimensiones["largo"] * factor_escala
+            y2 = y1 + dimensiones["ancho"] * factor_escala
+
+            if x2 > lienzo_width:  # Si la zona no cabe en la fila actual, empezamos una nueva fila
+                x_offset = 20
+                y_offset += row_height + 20  # 20 píxeles de espacio entre filas
+                row_height = 0
+
+                x1 = x_offset
+                y1 = y_offset
+                x2 = x1 + dimensiones["largo"] * factor_escala
+                y2 = y1 + dimensiones["ancho"] * factor_escala
+
             area = dimensiones["largo"] * dimensiones["ancho"]
             tiempo = VacuumRobot(self.room).estimar_tiempo_limpieza(1)  # Suponiendo velocidad de 1 m²/min
             self.lienzo.create_rectangle(x1, y1, x2, y2, fill="lightblue")
-            self.lienzo.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=f"{nombre}\nÁrea: {area:.2f} m²\nTiempo: {tiempo:.2f} minutos", font=("Arial", 8, "bold"), justify="center")
-            self.pos_x += dimensiones["largo"] * escala_largo + 10
+            area_text = f"{nombre}\nÁrea: {area:.2f} m²\nTiempo: {tiempo:.2f} minutos"
+            self.lienzo.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=area_text, font=("Arial", 8, "bold"), justify="center")
 
-        self.pos_x = 10
-
+            x_offset = x2 + 20  # 20 píxeles de espacio entre zonas
+            row_height = max(row_height, y2 - y1)  # Actualizamos la altura de la fila
 
 def main():
     root = tk.Tk()
     app = VacuumRobotGUI(root)
     root.mainloop()
 
-
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
