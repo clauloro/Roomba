@@ -30,50 +30,56 @@ class VacuumRobot:
 class VacuumRobotGUI:
     def __init__(self, master):
         self.master = master
-        master.title("ASPIRACION ROOMBA")  # Título de la ventana
+        master.title("ASPIRACION ROOMBA")  
         self.room = Room()
-        self.lienzo_frame = tk.Frame(master)
-        self.lienzo_frame.pack(expand=True, fill=tk.BOTH)
 
-        self.label_title = tk.Label(self.lienzo_frame, text="ASPIRACION ROOMBA", font=("Arial", 20, "bold"))
-        self.label_title.pack()
+        self.label_bg = "#F0F0F0" 
+        self.entry_bg = "#FFFFFF"  
+        self.button_bg = "#4CAF50"  
+        self.button_fg = "#FFFFFF"  
 
-        self.label_zona = tk.Label(self.lienzo_frame, text="Nombre de la zona:")
-        self.label_zona.pack()
-        self.entry_zona = tk.Entry(self.lienzo_frame)
-        self.entry_zona.pack()
+        self.main_frame = tk.Frame(master)
+        self.main_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
-        self.label_largo = tk.Label(self.lienzo_frame, text="Largo (cm):")
-        self.label_largo.pack()
-        self.entry_largo = tk.Entry(self.lienzo_frame)
-        self.entry_largo.pack()
+        self.label_title = tk.Label(self.main_frame, text="ASPIRACION ROOMBA", font=("Arial", 20, "bold"), bg=self.label_bg)
+        self.label_title.pack(pady=(0, 20))
 
-        self.label_ancho = tk.Label(self.lienzo_frame, text="Ancho (cm):")
-        self.label_ancho.pack()
-        self.entry_ancho = tk.Entry(self.lienzo_frame)
-        self.entry_ancho.pack()
+        self.label_zona = tk.Label(self.main_frame, text="Nombre de la zona:", bg=self.label_bg)
+        self.label_zona.pack(anchor="w", padx=10, pady=5)
+        self.entry_zona = tk.Entry(self.main_frame, bg=self.entry_bg, bd=2)  
+        self.entry_zona.pack(fill=tk.X, padx=10, pady=5)
 
-        self.button_agregar = tk.Button(self.lienzo_frame, text="Agregar Zona", command=self.agregar_zona)
-        self.button_agregar.pack()
+        self.label_largo = tk.Label(self.main_frame, text="Largo (cm):", bg=self.label_bg)
+        self.label_largo.pack(anchor="w", padx=10, pady=5)
+        self.entry_largo = tk.Entry(self.main_frame, bg=self.entry_bg, bd=2)  
+        self.entry_largo.pack(fill=tk.X, padx=10, pady=5)
+
+        self.label_ancho = tk.Label(self.main_frame, text="Ancho (cm):", bg=self.label_bg)
+        self.label_ancho.pack(anchor="w", padx=10, pady=5)
+        self.entry_ancho = tk.Entry(self.main_frame, bg=self.entry_bg, bd=2)  
+        self.entry_ancho.pack(fill=tk.X, padx=10, pady=5)
+
+        self.button_agregar = tk.Button(self.main_frame, text="Agregar Zona", bg=self.button_bg, fg=self.button_fg, command=self.agregar_zona, bd=2)  
+        self.button_agregar.pack(pady=10)
+
+        self.lienzo_frame = tk.Frame(self.main_frame, bg="white", bd=2, relief="groove")  
+        self.lienzo_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
         self.lienzo = tk.Canvas(self.lienzo_frame, bg="white")
         self.lienzo.pack(expand=True, fill=tk.BOTH)
 
-        self.factor_escala_inicial = 0.7  # Factor de escala inicial para la primera zona
+        self.factor_escala_inicial = 0.5  
         self.escala = self.factor_escala_inicial
-        self.pos_x = 20  # Ajustamos la posición inicial x para que comience más cerca del borde
-        self.pos_y = 20  # Ajustamos la posición inicial y para que comience más cerca del borde
 
     def agregar_zona(self):
         nombre = self.entry_zona.get()
-        largo = float(self.entry_largo.get().replace(",", ".")) / 100  # Convertir de cm a metros
-        ancho = float(self.entry_ancho.get().replace(",", ".")) / 100  # Convertir de cm a metros
+        largo = float(self.entry_largo.get().replace(",", ".")) / 100  
+        ancho = float(self.entry_ancho.get().replace(",", ".")) / 100  
         color = self.obtener_color_zona()
         self.room.agregar_zona(nombre, largo, ancho, color)
         self.mostrar_zonas()
 
     def obtener_color_zona(self):
-        # Colores suaves en tonalidad suave
         colores = ["#ADD8E6", "#FFA07A", "#FFC0CB", "#FFFF99", "#B0E0E6"]
         indice_color = len(self.room.zones) % len(colores)
         return colores[indice_color]
@@ -81,8 +87,8 @@ class VacuumRobotGUI:
     def mostrar_zonas(self):
         self.lienzo.delete("all")
 
-        lienzo_width = self.lienzo.winfo_width()
-        lienzo_height = self.lienzo.winfo_height()
+        lienzo_width = self.lienzo_frame.winfo_width()  
+        lienzo_height = self.lienzo_frame.winfo_height() 
 
         max_ancho = max(self.room.zones.values(), key=lambda x: x["ancho"])["ancho"]
         max_largo = max(self.room.zones.values(), key=lambda x: x["largo"])["largo"]
@@ -101,9 +107,9 @@ class VacuumRobotGUI:
             x2 = x1 + dimensiones["largo"] * factor_escala
             y2 = y1 + dimensiones["ancho"] * factor_escala
 
-            if x2 > lienzo_width:  # Si la zona no cabe en la fila actual, empezamos una nueva fila
+            if x2 > lienzo_width:  
                 x_offset = 20
-                y_offset += row_height + 20  # 20 píxeles de espacio entre filas
+                y_offset += row_height + 20 
                 row_height = 0
 
                 x1 = x_offset
@@ -114,14 +120,16 @@ class VacuumRobotGUI:
             color = dimensiones["color"]
 
             area = dimensiones["largo"] * dimensiones["ancho"]
-            tiempo = VacuumRobot(self.room).estimar_tiempo_limpieza(1)  # Suponiendo velocidad de 1 m²/min
+            tiempo = VacuumRobot(self.room).estimar_tiempo_limpieza(1)  
 
             self.lienzo.create_rectangle(x1, y1, x2, y2, fill=color)
-            area_text = f"{nombre}\nÁrea: {area:.2f} m²\nTiempo: {tiempo[nombre]:.2f} minutos"  # Mostrar tiempo por zona
+            area_text = f"{nombre}\nÁrea: {area:.2f} m²\nTiempo: {tiempo[nombre]:.2f} minutos"  
             self.lienzo.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=area_text, font=("Arial", 8, "bold"), justify="center")
 
-            x_offset = x2 + 20  # 20 píxeles de espacio entre zonas
-            row_height = max(row_height, y2 - y1)  # Actualizamos la altura de la fila
+            x_offset = x2 + 20  
+            row_height = max(row_height, y2 - y1)  
+
+        self.lienzo.config(scrollregion=self.lienzo.bbox("all"))
 
 def main():
     root = tk.Tk()
@@ -130,6 +138,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
 
 
 
