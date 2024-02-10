@@ -25,6 +25,9 @@ class VacuumRobot:
             tiempos_por_zona[zona] = tiempo
         return tiempos_por_zona
 
+    def tiempo_total_limpieza(self, velocidad_m2_por_minuto):
+        tiempo_total = sum(self.estimar_tiempo_limpieza(velocidad_m2_por_minuto).values())
+        return tiempo_total
 
 class VacuumRobotGUI:
     def __init__(self, master):
@@ -149,6 +152,23 @@ class VacuumRobotGUI:
 
             self.lienzo.config(scrollregion=self.lienzo.bbox("all"))
 
+            # Calcular el área total de limpieza sin contar el área del mueble
+            area_limpieza_total = sum(dimensiones["largo"] * dimensiones["ancho"] for dimensiones in self.room.zones.values())
+            area_limpieza_sin_mueble = area_limpieza_total - area_restante
+
+            # Mostrar el área total de limpieza
+            total_text = f"Área Total de Limpieza: {area_limpieza_sin_mueble:.2f} m²"
+            self.lienzo.create_text(lienzo_width / 2, lienzo_height * 0.95, text=total_text, font=("Arial", 10, "bold"), justify="center")
+
+            # Calcular el tiempo total de limpieza sin contar el área del mueble
+            velocidad_m2_por_minuto = 1  # Velocidad de limpieza en metros cuadrados por minuto
+            tiempo_total_sin_mueble = VacuumRobot(self.room).tiempo_total_limpieza(velocidad_m2_por_minuto)
+
+            # Mostrar el tiempo total de limpieza sin el área del mueble
+            tiempo_text = f"Tiempo Total de Limpieza: {tiempo_total_sin_mueble:.2f} minutos"
+            self.lienzo.create_text(lienzo_width / 2, lienzo_height * 0.97, text=tiempo_text, font=("Arial", 10, "bold"), justify="center")
+
+
 def main():
     root = tk.Tk()
     app = VacuumRobotGUI(root)
@@ -156,6 +176,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
 
 
 
