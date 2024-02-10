@@ -8,11 +8,10 @@ class Room:
         self.zones[nombre] = {"largo": largo, "ancho": ancho, "color": color}
 
     def calcular_superficie_total(self):
-        superficie_total = 0
+        superficie_total = 31.5  # Área total de la habitación en metros cuadrados
         for zona, dimensiones in self.zones.items():
-            superficie_total += dimensiones["largo"] * dimensiones["ancho"]
+            superficie_total -= dimensiones["largo"] * dimensiones["ancho"]
         return superficie_total
-
 
 class VacuumRobot:
     def __init__(self, room):
@@ -70,6 +69,9 @@ class VacuumRobotGUI:
 
         self.factor_escala_inicial = 0.5  
         self.escala = self.factor_escala_inicial
+
+        self.button_listo = tk.Button(self.main_frame, text="Listo", bg=self.button_bg, fg=self.button_fg, command=self.calcular_mueble, bd=2)
+        self.button_listo.pack(pady=10)
 
     def agregar_zona(self):
         nombre = self.entry_zona.get()
@@ -129,7 +131,23 @@ class VacuumRobotGUI:
             x_offset = x2 + 20  
             row_height = max(row_height, y2 - y1)  
 
-        self.lienzo.config(scrollregion=self.lienzo.bbox("all"))
+    def calcular_mueble(self):
+        # Calcular y mostrar el área restante (mueble)
+        area_restante = self.room.calcular_superficie_total()
+        if area_restante > 0:
+            lienzo_width = self.lienzo_frame.winfo_width()
+            lienzo_height = self.lienzo_frame.winfo_height()
+
+            x1 = lienzo_width * 0.7
+            y1 = lienzo_height * 0.7
+            x2 = lienzo_width * 0.9
+            y2 = lienzo_height * 0.9
+
+            self.lienzo.create_rectangle(x1, y1, x2, y2, fill="gray")
+            mueble_text = f"Mueble\nÁrea: {area_restante:.2f} m²"
+            self.lienzo.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=mueble_text, font=("Arial", 8, "bold"), justify="center")
+
+            self.lienzo.config(scrollregion=self.lienzo.bbox("all"))
 
 def main():
     root = tk.Tk()
